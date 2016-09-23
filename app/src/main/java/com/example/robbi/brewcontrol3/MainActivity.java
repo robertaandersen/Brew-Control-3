@@ -13,6 +13,8 @@ import android.widget.TextView;
 
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -42,6 +44,8 @@ public class MainActivity extends AppCompatActivity implements BlueToothBuddy.Bl
     private CompositeSubscription compositeSubscription;
     private TimeManager timeManager;
     private IntentFilter filter;
+    private TemperatureReader temperatureReader;
+    private List<Double> doubleList = new ArrayList<>();
 
 
     @Override
@@ -88,6 +92,7 @@ public class MainActivity extends AppCompatActivity implements BlueToothBuddy.Bl
     protected void onPause() {
         super.onPause();
         BlueToothBuddy.getInstance(this).clear();
+        compositeSubscription.clear();
     }
 
     @Override
@@ -95,6 +100,10 @@ public class MainActivity extends AppCompatActivity implements BlueToothBuddy.Bl
         super.onDestroy();
         if (this.compositeSubscription != null) {
             this.compositeSubscription.clear();
+        }
+        if(temperatureReader != null){
+            temperatureReader.clear();
+            temperatureReader = null;
         }
         unregisterReceiver(BlueToothBuddy.getInstance(this));
         BlueToothBuddy.getInstance(this).clear();
@@ -111,6 +120,9 @@ public class MainActivity extends AppCompatActivity implements BlueToothBuddy.Bl
         showProgress(true);
         BlueToothBuddy.getInstance(this).clear();
         BlueToothBuddy.getInstance(this).setUpAndConnect();
+        if(temperatureReader != null){
+            temperatureReader.reset();
+        }
     }
 
     @Override
@@ -118,7 +130,6 @@ public class MainActivity extends AppCompatActivity implements BlueToothBuddy.Bl
         showProgress(false);
         if (status == BlueToothBuddy.SUCCESSFUL_CONNECTION) {
             connectedHeader.setText("Connected to " + name);
-            TemperatureReader temperatureReader;
             temperatureReader = new TemperatureReader();
             try {
                 temperatureReader.setInputStream(BlueToothBuddy.getInstance(this).getSocket().getInputStream());
@@ -127,8 +138,8 @@ public class MainActivity extends AppCompatActivity implements BlueToothBuddy.Bl
             }
             temperatureReader.setCallback(this);
             temperatureReader.start();
-//            this.compositeSubscription = new CompositeSubscription();
-//            this.compositeSubscription.add(timeManager.getTimeSubscription(this));
+            this.compositeSubscription = new CompositeSubscription();
+            this.compositeSubscription.add(timeManager.getTimeSubscription(this));
 
         } else {
             connectedHeader.setText("Not connected");
@@ -139,6 +150,21 @@ public class MainActivity extends AppCompatActivity implements BlueToothBuddy.Bl
     public void onTempRecieved(String _temp) {
         currentTemperature.setText(_temp + "°");
         showProgress(false);
+    }
+
+    @Override
+    public void onUpdateMinuteAverage(String avrTemp) {
+        averageTemperature.setText(avrTemp + "°");
+    }
+
+    @Override
+    public void onUpdateChange(String s) {
+        averageChange.setText(s + "°");
+    }
+
+    @Override
+    public void onDoubleParsed(double d) {
+        doubleList.add(d);
     }
 
     @Override
