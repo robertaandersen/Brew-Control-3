@@ -32,7 +32,7 @@ import java.util.UUID;
 /**
  * Created by robbi on 17/09/16.
  */
-public class ScanAndPair extends Activity {
+public class OldScanAndPair extends Activity {
     TextView out;
     String connectStatus;
     BluetoothAdapter mBluetoothAdapter = null;
