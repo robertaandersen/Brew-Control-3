@@ -32,9 +32,16 @@ public class TimeManager {
 
                     @Override
                     public void onNext(Long aLong) {
-                        Date d = new Date(MainApplication.getBrewControl().getTime());
-                        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm:ss");
-                        timeManagerCallbacks.onTimeMeasured(simpleDateFormat.format(d));
+                        long time = MainApplication.getBrewControl().getTime();
+                        long secs = time / 1000;
+                        long min = secs / 60;
+                        long hours = min / 60;
+                        String ss = String.valueOf(secs % 60);
+                        ss = secs < 10 ? "0" + ss : ss;
+                        String mm = String.valueOf(min % 60);
+                        mm = min < 10 ? "0" + mm : mm;
+                        String timeFormat = hours + ":" + mm  + ":" + ss;
+                        timeManagerCallbacks.onTimeMeasured(timeFormat);
                     }
                 });
     }

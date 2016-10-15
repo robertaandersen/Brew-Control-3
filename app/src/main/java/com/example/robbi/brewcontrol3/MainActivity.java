@@ -12,6 +12,8 @@ import android.view.View;
 import android.widget.TextView;
 
 
+import com.github.mikephil.charting.charts.LineChart;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +41,10 @@ public class MainActivity extends AppCompatActivity implements BlueToothBuddy.Bl
     @Bind(R.id.time)
     TextView time;
 
+    @Bind(R.id.chart)
+    LineChart lineChart;
+
+
     private static final int REQUEST_ENABLE_BT = 1000;
 
     private CompositeSubscription compositeSubscription;
@@ -46,6 +52,7 @@ public class MainActivity extends AppCompatActivity implements BlueToothBuddy.Bl
     private IntentFilter filter;
     private TemperatureReader temperatureReader;
     private List<Double> doubleList = new ArrayList<>();
+    private ChartManager chartManager;
 
 
     @Override
@@ -56,6 +63,7 @@ public class MainActivity extends AppCompatActivity implements BlueToothBuddy.Bl
 
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 1001); //Any number
         this.timeManager = new TimeManager();
+        this.chartManager = new ChartManager(lineChart);
 
 
         if (!BlueToothBuddy.getInstance(this).isEnabled()) {
@@ -92,7 +100,9 @@ public class MainActivity extends AppCompatActivity implements BlueToothBuddy.Bl
     protected void onPause() {
         super.onPause();
         BlueToothBuddy.getInstance(this).clear();
-        compositeSubscription.clear();
+        if (compositeSubscription != null) {
+            compositeSubscription.clear();
+        }
     }
 
     @Override
@@ -101,7 +111,7 @@ public class MainActivity extends AppCompatActivity implements BlueToothBuddy.Bl
         if (this.compositeSubscription != null) {
             this.compositeSubscription.clear();
         }
-        if(temperatureReader != null){
+        if (temperatureReader != null) {
             temperatureReader.clear();
             temperatureReader = null;
         }
@@ -116,13 +126,23 @@ public class MainActivity extends AppCompatActivity implements BlueToothBuddy.Bl
 
 
     public void btnCheck(View v) {
-        MainApplication.getBrewControl().resetTimer();
-        showProgress(true);
-        BlueToothBuddy.getInstance(this).clear();
-        BlueToothBuddy.getInstance(this).setUpAndConnect();
-        if(temperatureReader != null){
-            temperatureReader.reset();
+        if(v.getId() == R.id.reset_all) {
+            MainApplication.getBrewControl().resetTimer();
+            showProgress(true);
+            BlueToothBuddy.getInstance(this).clear();
+            BlueToothBuddy.getInstance(this).setUpAndConnect();
+            if (temperatureReader != null) {
+                temperatureReader.reset();
+            }
+            if (chartManager != null) {
+                chartManager.resetChart();
+            }
+            return;
         }
+        if (chartManager != null) {
+            chartManager.resetChart();
+        }
+
     }
 
     @Override
@@ -149,6 +169,7 @@ public class MainActivity extends AppCompatActivity implements BlueToothBuddy.Bl
     @Override
     public void onTempRecieved(String _temp) {
         currentTemperature.setText(_temp + "°");
+        chartManager.addTemp(_temp);
         showProgress(false);
     }
 
